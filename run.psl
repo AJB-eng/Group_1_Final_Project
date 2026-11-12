@@ -1,0 +1,27 @@
+# Builds and runs the app with only a JDK installed (no Maven/Gradle needed).
+# Downloads JavaFX jars from Maven Central into .\lib on first run.
+$ErrorActionPreference = "Stop"
+Set-Location $PSScriptRoot
+$fx = "21.0.2"
+$libDir = Join-Path $PSScriptRoot "lib"
+New-Item -ItemType Directory -Force -Path $libDir | Out-Null
+
+foreach ($m in @("base", "graphics", "controls")) {
+    $jar = Join-Path $libDir "javafx-$m-$fx-win.jar"
+    if (-not (Test-Path $jar)) {
+        $url = "https://repo1.maven.org/maven2/org/openjfx/javafx-$m/$fx/javafx-$m-$fx-win.jar"
+        Write-Host "Downloading $url"
+        Invoke-WebRequest -Uri $url -OutFile $jar
+    }
+}
+
+$out = Join-Path $PSScriptRoot "out"
+if (Test-Path $out) { Remove-Item -Recurse -Force $out }
+New-Item -ItemType Directory -Force -Path $out | Out-Null
+
+$sources = (Get-ChildItem -Path "src\main\java" -Recurse -Filter "*.java").FullName
+$cp = (Get-ChildItem $libDir -Filter "*.jar").FullName -join ";"
+javac -encoding UTF-8 -cp $cp -d $out $sources
+if ($LASTEXITCODE -ne 0) { throw "Compilation failed" }
+
+java --enable-native-access=ALL-UNNAMED --module-path $libDir --add-modules javafx.controls -cp $out ui.Launcher
