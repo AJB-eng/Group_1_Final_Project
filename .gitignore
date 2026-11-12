@@ -1,0 +1,15 @@
+# Downloaded JavaFX jars (run.ps1 downloads them again)
+lib/
+
+# Compiled output and the built app
+out/
+dist/
+build-input/
+manifest.txt
+
+# Editor files
+.vscode/
+.idea/
+
+# Zip made for sharing
+*.zip
