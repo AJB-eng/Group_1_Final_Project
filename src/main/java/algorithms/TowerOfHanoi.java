@@ -87,3 +87,95 @@ public class TowerOfHanoi {
                 elapsedNanos
         );
     }
+    private void runHanoiInternal(int diskCount, int sourcePeg, int destPeg, int auxPeg, StepCollector collector) {
+        pegs = new int[3][diskCount];
+        pegSizes = new int[]{0, 0, 0};
+        pegSizes[sourcePeg] = diskCount;
+        operationsCount += 2;
+
+        // Stack disks N (largest, bottom) down to 1 (smallest, top) on sourcePeg
+        for (int i = 0; i < diskCount; i++) {
+            operationsCount++;
+            pegs[sourcePeg][i] = diskCount - i;
+            operationsCount++;
+        }
+
+        if (collector != null) {
+            collector.recordHanoiStep(
+                    snapshotPegs(),
+                    -1,
+                    sourcePeg,
+                    destPeg,
+                    0,
+                    "Initial State (Move 0 / " + ((1 << diskCount) - 1) + "): " + diskCount
+                            + " disks placed on Source " + PEG_NAMES[sourcePeg]
+                            + ". Target Destination is " + PEG_NAMES[destPeg]
+                            + " (Auxiliary: " + PEG_NAMES[auxPeg] + ")."
+            );
+        }
+
+        solveRecursive(diskCount, sourcePeg, destPeg, auxPeg, collector, (1 << diskCount) - 1);
+
+        if (collector != null) {
+            collector.recordHanoiStep(
+                    snapshotPegs(),
+                    -1,
+                    sourcePeg,
+                    destPeg,
+                    moveCounter,
+                    "Completed! All " + diskCount + " disks transferred to " + PEG_NAMES[destPeg]
+                            + ". Total Moves = " + moveCounter + " (equals 2^" + diskCount + " - 1 = " + ((1 << diskCount) - 1) + ")."
+            );
+        }
+    }
+
+    private void solveRecursive(int n, int fromPeg, int toPeg, int auxPeg, StepCollector collector, int expectedTotal) {
+        recursiveCallsCount++;
+        operationsCount++;
+        if (n == 1) {
+            moveTopDisk(fromPeg, toPeg, collector, expectedTotal);
+            return;
+        }
+
+        solveRecursive(n - 1, fromPeg, auxPeg, toPeg, collector, expectedTotal);
+        moveTopDisk(fromPeg, toPeg, collector, expectedTotal);
+        solveRecursive(n - 1, auxPeg, toPeg, fromPeg, collector, expectedTotal);
+    }
+
+    private void moveTopDisk(int fromPeg, int toPeg, StepCollector collector, int expectedTotal) {
+        pegSizes[fromPeg]--;
+        int disk = pegs[fromPeg][pegSizes[fromPeg]];
+        pegs[fromPeg][pegSizes[fromPeg]] = 0;
+        operationsCount += 3;
+
+        pegs[toPeg][pegSizes[toPeg]] = disk;
+        pegSizes[toPeg]++;
+        moveCounter++;
+        operationsCount += 3;
+
+        if (collector != null) {
+            collector.recordHanoiStep(
+                    snapshotPegs(),
+                    disk,
+                    fromPeg,
+                    toPeg,
+                    moveCounter,
+                    "Move " + moveCounter + " of " + expectedTotal + ": Move disk " + disk
+                            + " from " + PEG_SHORT[fromPeg] + " to " + PEG_SHORT[toPeg]
+            );
+        }
+    }
+
+    private int[][] snapshotPegs() {
+        int[][] snap = new int[3][];
+        for (int p = 0; p < 3; p++) {
+            int count = pegSizes[p];
+            snap[p] = new int[count];
+            for (int i = 0; i < count; i++) {
+                snap[p][i] = pegs[p][i];
+            }
+        }
+        return snap;
+    }
+}
+
