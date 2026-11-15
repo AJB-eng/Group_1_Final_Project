@@ -314,3 +314,231 @@ public class CustomBinarySearchTree {
 
         appendToTraversal(node.data);
         operationsCount++; // Visit node
+if (collector != null) {
+            int[] visited = getTrimmedTraversal();
+            collector.recordTreeStep(
+                    snapshotTree(root, node.data, TreeNodeSnapshot.STATE_COMPARING, visited),
+                    visited,
+                    operationsCount,
+                    "Preorder Traversal (Root -> L -> R): visited node (" + node.data + ") -> " + ArrayUtils.arrayToString(visited)
+            );
+        }
+
+        preorderRecursive(node.left, collector);
+        preorderRecursive(node.right, collector);
+    }
+
+    /**
+     * Recursive Postorder Traversal (Left -> Right -> Node).
+     */
+    public int[] postorderTraversal(StepCollector collector) {
+        initTraversalBuffer();
+        postorderRecursive(root, collector);
+        return getTrimmedTraversal();
+    }
+
+    private void postorderRecursive(TreeNode node, StepCollector collector) {
+        operationsCount++; // Null check
+        if (node == null) {
+            return;
+        }
+
+        postorderRecursive(node.left, collector);
+        postorderRecursive(node.right, collector);
+
+        appendToTraversal(node.data);
+        operationsCount++; // Visit node
+
+        if (collector != null) {
+            int[] visited = getTrimmedTraversal();
+            collector.recordTreeStep(
+                    snapshotTree(root, node.data, TreeNodeSnapshot.STATE_COMPARING, visited),
+                    visited,
+                    operationsCount,
+                    "Postorder Traversal (L -> R -> Root): visited node (" + node.data + ") -> " + ArrayUtils.arrayToString(visited)
+            );
+        }
+    }
+
+    private void initTraversalBuffer() {
+        int cap = size > 0 ? size + 4 : 16;
+        traversalBuffer = new int[cap];
+        traversalCount = 0;
+    }
+
+    private void appendToTraversal(int value) {
+        if (traversalCount >= traversalBuffer.length) {
+            int[] next = new int[traversalBuffer.length * 2];
+            for (int i = 0; i < traversalCount; i++) {
+                next[i] = traversalBuffer[i];
+            }
+            traversalBuffer = next;
+        }
+        traversalBuffer[traversalCount++] = value;
+    }
+
+    private int[] getTrimmedTraversal() {
+        int[] res = new int[traversalCount];
+        for (int i = 0; i < traversalCount; i++) {
+            res[i] = traversalBuffer[i];
+        }
+        return res;
+    }
+
+    public int[] getInorderRaw() {
+        int[] buf = new int[size > 0 ? size + 2 : 4];
+        int[] countHolder = new int[]{0};
+        fillInorderRaw(root, buf, countHolder);
+        int[] res = new int[countHolder[0]];
+        for (int i = 0; i < countHolder[0]; i++) {
+            res[i] = buf[i];
+        }
+        return res;
+    }
+
+    private void fillInorderRaw(TreeNode node, int[] buf, int[] countHolder) {
+        if (node == null) {
+            return;
+        }
+        fillInorderRaw(node.left, buf, countHolder);
+        if (countHolder[0] < buf.length) {
+            buf[countHolder[0]++] = node.data;
+        }
+        fillInorderRaw(node.right, buf, countHolder);
+    }
+
+    private TreeNodeSnapshot snapshotTreeWithRootOverride(
+            TreeNode currentRoot,
+            TreeNode newlyCreated,
+            int highlightVal,
+            int highlightState) {
+        TreeNode effectiveRoot = currentRoot != null ? currentRoot : newlyCreated;
+        return snapshotTree(effectiveRoot, highlightVal, highlightState, null);
+    }
+
+    private TreeNodeSnapshot snapshotTree(
+            TreeNode node,
+            int activeValue,
+            int activeState,
+            int[] visitedValues) {
+        if (node == null) {
+            return null;
+        }
+        int state = TreeNodeSnapshot.STATE_DEFAULT;
+        if (node.data == activeValue) {
+            state = activeState;
+        } else if (visitedValues != null && ArrayUtils.contains(visitedValues, node.data)) {
+            state = TreeNodeSnapshot.STATE_VISITED_OR_FOUND;
+        }
+        TreeNodeSnapshot leftSnap = snapshotTree(node.left, activeValue, activeState, visitedValues);
+        TreeNodeSnapshot rightSnap = snapshotTree(node.right, activeValue, activeState, visitedValues);
+        return new TreeNodeSnapshot(node.data, state, leftSnap, rightSnap);
+    }
+
+    /**
+     * Executes a BST workflow and returns an ExecutionResult with pure nanoTime metrics.
+     */
+    public ExecutionResult executeFullWorkflow(int[] inputValues, int targetValue, String mode) {
+        StepCollector collector = new StepCollector();
+
+        // Clone current state into a timing tree for pure nanoTime measurement
+        new TreeNode(0);
+        CustomBinarySearchTree timingTree = new CustomBinarySearchTree();
+        int[] existingNodes = getPreorderRaw();
+        for (int i = 0; i < existingNodes.length; i++) {
+            timingTree.insert(existingNodes[i], null);
+        }
+        timingTree.resetCounter();
+
+        long startTime = System.nanoTime();
+        runModeInternal(timingTree, inputValues, targetValue, mode, null);
+        long elapsedNanos = System.nanoTime() - startTime;
+
+        // Visual trace run
+        resetCounter();
+        String summary = runModeInternal(this, inputValues, targetValue, mode, collector);
+
+        return new ExecutionResult(
+                AlgorithmType.BINARY_SEARCH_TREE,
+                summary,
+                collector.toArray(),
+                this.operationsCount,
+                elapsedNanos
+        );
+    }
+
+    private int[] getPreorderRaw() {
+        int[] buf = new int[size > 0 ? size + 2 : 4];
+        int[] countHolder = new int[]{0};
+        fillPreorderRaw(root, buf, countHolder);
+        int[] res = new int[countHolder[0]];
+        for (int i = 0; i < countHolder[0]; i++) {
+            res[i] = buf[i];
+        }
+        return res;
+    }
+
+    private void fillPreorderRaw(TreeNode node, int[] buf, int[] countHolder) {
+        if (node == null) {
+            return;
+        }
+        if (countHolder[0] < buf.length) {
+            buf[countHolder[0]++] = node.data;
+        }
+        fillPreorderRaw(node.left, buf, countHolder);
+        fillPreorderRaw(node.right, buf, countHolder);
+    }
+
+    private String runModeInternal(
+            CustomBinarySearchTree bst,
+            int[] inputValues,
+            int targetValue,
+            String mode,
+            StepCollector collector) {
+        if ("INSERT".equals(mode)) {
+            bst.insert(targetValue, collector);
+            if (collector == null) return "";
+            return "Inserted " + targetValue + " | Inorder: " + ArrayUtils.arrayToString(bst.getInorderRaw());
+        } else if ("DELETE".equals(mode)) {
+            bst.delete(targetValue, collector);
+            if (collector == null) return "";
+            collector.recordTreeStep(
+                    bst.snapshotTree(bst.root, Integer.MIN_VALUE, TreeNodeSnapshot.STATE_DEFAULT, null),
+                    bst.getInorderRaw(),
+                    bst.getOperationsCount(),
+                    "Completed delete(" + targetValue + "). Current Inorder: " + ArrayUtils.arrayToString(bst.getInorderRaw())
+            );
+            return "Deleted " + targetValue + " | Inorder: " + ArrayUtils.arrayToString(bst.getInorderRaw());
+        } else if ("SEARCH".equals(mode)) {
+            boolean found = bst.search(targetValue, collector);
+            if (collector == null) return "";
+            return (found ? "Found " + targetValue + " in BST" : "Value " + targetValue + " Not Found")
+                    + " | Inorder: " + ArrayUtils.arrayToString(bst.getInorderRaw());
+        } else if ("INORDER".equals(mode)) {
+            int[] order = bst.inorderTraversal(collector);
+            if (collector == null) return "";
+            return "Inorder (L-Root-R): " + ArrayUtils.arrayToString(order);
+        } else if ("PREORDER".equals(mode)) {
+            int[] order = bst.preorderTraversal(collector);
+            if (collector == null) return "";
+            return "Preorder (Root-L-R): " + ArrayUtils.arrayToString(order);
+        } else if ("POSTORDER".equals(mode)) {
+            int[] order = bst.postorderTraversal(collector);
+            if (collector == null) return "";
+            return "Postorder (L-R-Root): " + ArrayUtils.arrayToString(order);
+        } else {
+            // Default full workflow: build BST from inputValues, search targetValue, run Inorder/Preorder/Postorder
+            bst.clear();
+            for (int i = 0; i < inputValues.length; i++) {
+                bst.insert(inputValues[i], collector);
+            }
+            int[] in = bst.inorderTraversal(collector);
+            int[] pre = bst.preorderTraversal(collector);
+            int[] post = bst.postorderTraversal(collector);
+            boolean found = bst.search(targetValue, collector);
+            if (collector == null) return "";
+            return "Inorder: " + ArrayUtils.arrayToString(in)
+                    + " | Preorder: " + ArrayUtils.arrayToString(pre)
+                    + " | Postorder: " + ArrayUtils.arrayToString(post)
+                    + " | Search(" + targetValue + ")=" + (found ? "FOUND" : "NOT FOUND");
+        }
