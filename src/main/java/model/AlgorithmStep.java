@@ -133,4 +133,110 @@ public class AlgorithmStep {
                 description
         );
     }
+/**
+     * Convenience constructor for Tower of Hanoi steps.
+     */
+    public static AlgorithmStep createHanoiStep(
+            int stepNumber,
+            int[][] pegsSnapshot,
+            int movingDisk,
+            int fromPeg,
+            int toPeg,
+            long operationsCount,
+            String description) {
+        return new AlgorithmStep(
+                stepNumber,
+                new int[0],
+                new int[0],
+                new int[0],
+                new int[0],
+                fromPeg, "FROM",
+                toPeg, "TO",
+                movingDisk, "DISK",
+                0,
+                null,
+                pegsSnapshot,
+                movingDisk,
+                fromPeg,
+                toPeg,
+                operationsCount,
+                description
+        );
+    }
 
+    public int getStepNumber() {
+        return stepNumber;
+    }
+
+    public int[] getArraySnapshot() {
+        return arraySnapshot;
+    }
+
+    public int[] getActiveIndices() {
+        return activeIndices;
+    }
+
+    public int[] getSwapIndices() {
+        return swapIndices;
+    }
+
+    public int[] getSortedIndices() {
+        return sortedIndices;
+    }
+
+    public int getPointerA() {
+        return pointerA;
+    }
+
+    public int getPointerB() {
+        return pointerB;
+    }
+
+    public int getPointerC() {
+        return pointerC;
+    }
+
+    public String getPointerALabel() {
+        return pointerALabel;
+    }
+
+    public String getPointerBLabel() {
+        return pointerBLabel;
+    }
+
+    public String getPointerCLabel() {
+        return pointerCLabel;
+    }
+
+    public int getStructureCapacity() {
+        return structureCapacity;
+    }
+
+    public TreeNodeSnapshot getTreeRootSnapshot() {
+        return treeRootSnapshot;
+    }
+
+    public int[][] getPegsSnapshot() {
+        return pegsSnapshot;
+    }
+
+    public int getMovingDisk() {
+        return movingDisk;
+    }
+
+    public int getFromPeg() {
+        return fromPeg;
+    }
+
+    public int getToPeg() {
+        return toPeg;
+    }
+
+    public long getOperationsCount() {
+        return operationsCount;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+}
