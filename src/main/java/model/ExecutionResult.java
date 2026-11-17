@@ -63,4 +63,56 @@ public class ExecutionResult {
         this.tableHeaders = tableHeaders;
         this.tableRows = tableRows;
     }
+public AlgorithmType getAlgorithmType() {
+        return algorithmType;
+    }
+
+    public String getFinalResult() {
+        return finalResult;
+    }
+
+    public AlgorithmStep[] getSteps() {
+        return steps;
+    }
+
+    public long getTotalOperations() {
+        return totalOperations;
+    }
+
+    public long getComparisonsCount() {
+        return comparisonsCount;
+    }
+
+    public long getSwapsOrMovesCount() {
+        return swapsOrMovesCount;
+    }
+
+    public long getExecutionTimeNanos() {
+        return executionTimeNanos;
+    }
+
+    public double getExecutionTimeMicros() {
+        return executionTimeNanos / 1_000.0;
+    }
+
+    public double getExecutionTimeMillis() {
+        return executionTimeNanos / 1_000_000.0;
+    }
+
+    public ComplexityInfo getComplexityInfo() {
+        return complexityInfo;
+    }
+
+    public VisualizationType getVisualizationType() {
+        return visualizationType;
+    }
+
+    public String[] getTableHeaders() {
+        return tableHeaders;
+    }
+
+    public String[][] getTableRows() {
+        return tableRows;
+    }
+}
 
